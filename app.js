@@ -2,9 +2,13 @@ const express = require("express");
 const expHbs = require("express-handlebars");
 // const cookieParser = require("cookie-parser");
 const sessions = require("express-session");
+const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
+const userModel = require("./models/userModel");
 const port = 8000;
 const sec12 = "123asdf";
 const oneDay = 1000 * 60 * 60 * 24;
+const saltRounds = 10;
 const app = express();
 
 app.use(express.json());
@@ -40,20 +44,46 @@ app.get("/login", (req, res) => {
   }
 });
 
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
+app.post("/postRegister", async (req, res) => {
+  let { name, uname, email, password } = req.body;
+  let hash = bcrypt.hashSync(password, saltRounds);
+  console.log(hash);
+  // res.send(hash);
+  const user = await userModel.create({
+    naame: name,
+    uname: uname,
+    email: email,
+    password: hash,
+  });
+  res.status(201).redirect("/login");
+  console.log(user);
+});
+
 app.post("/postdata", (req, res) => {
   let { uname, password } = req.body;
   //   res.send(req.body);
-  let udata = { uname: "Noman", password: "noman" };
-  if (uname === udata.uname && password === udata.password) {
-    // res.cookie("username", uname);
-    session = req.session;
-    session.username = uname;
-    console.log(req.session);
-    return res.redirect("/welcome");
-  } else {
-    return res.redirect("/login?msg=fail");
-  }
+  userModel.findOne({ username: uname }, (err, data) => {
+    if (err) {
+      return res.redirect("/login?msg=fail");
+    } else if (data == null) {
+      return res.redirect("/login?msg=fail");
+    } else {
+      if (bcrypt.compareSync(password, data.password)) {
+        session = req.session;
+        session.username = uname;
+        console.log(req.session);
+        return res.redirect("/welcome");
+      } else {
+        return res.redirect("/login?msg=fail");
+      }
+    }
+  });
 });
+
 app.get("/welcome", (req, res) => {
   //   let username = req.cookies.username;
   let username = req.session.username;
@@ -65,6 +95,17 @@ app.get("/logout", (req, res) => {
   //   res.clearCookie("username");
   return res.redirect("/login");
 });
+
+const connectToDB = mongoose.connect(
+  "mongodb://localhost:27017/users",
+  (err) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(`Database Connected succesfully`);
+    }
+  }
+);
 
 app.listen(port, (err) => {
   if (err) {
