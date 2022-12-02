@@ -5,8 +5,11 @@ const sessions = require("express-session");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 const userModel = require("./models/userModel");
+const multer = require("multer");
+const mime = require("mime-types");
 const port = 8000;
 const sec12 = "123asdf";
+const path = require("path");
 const oneDay = 1000 * 60 * 60 * 24;
 const saltRounds = 10;
 const app = express();
@@ -17,6 +20,20 @@ app.engine("handlebars", expHbs.engine());
 app.set("view engine", "handlebars");
 app.set("views", "./views");
 // app.use(cookieParser());
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "uploads"));
+  },
+  filename: function (req, file, cb) {
+    let ext = mime.extension(file.mimetype);
+    cb(null, file.filename + "-" + Date.now() + "." + ext);
+    console.log(ext);
+  },
+});
+
+const upload = multer({ storage: storage });
+
 app.use(
   sessions({
     secret: sec12,
@@ -32,6 +49,19 @@ app.get("/", (req, res) => {
     return res.render("index", { uname: session.username });
   } else {
     return res.redirect("login");
+  }
+});
+
+app.get("/upload", (req, res) => {
+  res.render("upload");
+});
+
+app.post("/uploadFile", upload.single("att"), (req, res) => {
+  let uploadedFile = req.file.fieldname;
+  if (uploadedFile) {
+    res.send("File uploaded successfully");
+  } else {
+    res.send("Error while uploading please try again");
   }
 });
 
@@ -61,6 +91,7 @@ app.post("/postRegister", async (req, res) => {
   });
   res.status(201).redirect("/login");
   console.log(user);
+  console.log(password);
 });
 
 app.post("/postdata", (req, res) => {
@@ -84,10 +115,20 @@ app.post("/postdata", (req, res) => {
   });
 });
 
+app.get("/resetPass", (req, res) => {
+  res.render("resPass");
+});
+
 app.get("/welcome", (req, res) => {
   //   let username = req.cookies.username;
   let username = req.session.username;
   return res.render("welcome", { username: username });
+});
+
+app.get("/accActivate/:id", (req, res) => {
+  let id = req.params.id;
+  userModel.findById(id);
+  console.log(id);
 });
 
 app.get("/logout", (req, res) => {

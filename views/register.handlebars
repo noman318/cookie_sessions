@@ -16,7 +16,7 @@
   </head>
   <body>
     <h1 class="marginleft">Register Here</h1>
-    <form class="container" action="/postRegister" method="post">
+    <form class="container" action="/postRegister" enctype="multipart/form-data" method="post">
     <div class="form-group ">
     <label for="exampleInputEmail1">Name</label>
     <input type="text" name="name" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
@@ -35,6 +35,10 @@
   <div class="form-group">
     <label for="exampleInputPassword1">Password</label>
     <input type="password" name="password" class="form-control" id="exampleInputPassword1">
+  </div>
+  <div class="form-group">
+    <label for="examplePhoto">Upload File</label>
+    <input type="file" name="att" class="form-control" id="examplePhoto">
   </div>
   <button type="submit" class="btn btn-primary">Submit</button>
   <br><br>
